@@ -1,0 +1,4 @@
+data/reference/aircraft-database.csv
+__pycache__/
+*.jar
+.DS_Store
