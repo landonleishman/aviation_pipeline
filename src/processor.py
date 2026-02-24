@@ -73,6 +73,6 @@ airplanes_df = airplanes_df.withColumn("timestamp", F.col("timestamp").cast("tim
 
 
 #inserting
-db_url = "jdbc:postgresql://localhost:5432/aviation_pipeline"
+db_url = "jdbc:postgresql://localhost:5433/aviation_pipeline"
 refined_airports_df.write.format("jdbc").option("url", db_url).option("dbtable", "airports").option("user", "landon").option("password", "password123").mode("overwrite").save()
 airplanes_df.write.format("jdbc").option("url", db_url).option("dbtable", "airplanes").option("user", "landon").option("password", "password123").mode("overwrite").save()
