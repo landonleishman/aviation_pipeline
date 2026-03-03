@@ -2,14 +2,27 @@ services:
   db:
     image: postgres:15
     container_name: aviation-db
+    restart: always
     environment:
-      POSTGRES_USER: landon
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: aviation_pipeline
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  collector:
+    build: .
+    container_name: aviation-collector
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
 
 volumes:
   postgres_data:
