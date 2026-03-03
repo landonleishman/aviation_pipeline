@@ -12,3 +12,4 @@ data/*.csv
 .DS_Store
 Thumbs.db
 *.jar
+/data/raw/*
