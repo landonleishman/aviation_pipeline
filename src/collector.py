@@ -35,7 +35,10 @@ query  = """CREATE TABLE IF NOT EXISTS live_flights (
     velocity FLOAT,
     true_track FLOAT,
     on_ground BOOLEAN,
-    last_update TIMESTAMP
+    last_update TIMESTAMP,
+    origin_icao TEXT,
+    destination_icao TEXT,
+    vertical_rate FLOAT
 );"""
 cursor.execute(query)
 conn.commit()
@@ -51,7 +54,10 @@ query = """CREATE TABLE IF NOT EXISTS flight_history (
     velocity FLOAT,
     true_track FLOAT,
     on_ground BOOLEAN,
-    last_update TIMESTAMP
+    last_update TIMESTAMP,
+    origin_icao TEXT,
+    destination_icao TEXT,
+    vertical_rate FLOAT
 );"""
 cursor.execute(query)
 conn.commit()
@@ -91,15 +97,15 @@ while True:
 
         #-------queries------
         #flight history
-        history_query = """INSERT INTO flight_history (icao24, callsign, latitude, longitude, baro_altitude, velocity, true_track, on_ground, last_update) 
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+        history_query = """INSERT INTO flight_history (icao24, callsign, latitude, longitude, baro_altitude, velocity, true_track, on_ground, last_update, vertical_rate) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
         #inserting for history table
         if states is not None:
             for s in states:
                 data = (s[0], s[1].strip() if s[1] else None,
                     s[6], s[5], s[7], s[9], s[10], s[8], 
-                    datetime.fromtimestamp(s[3]) 
+                    datetime.fromtimestamp(s[3]), s[11] 
                 )
                 cursor.execute(history_query, data)
             conn.commit()
@@ -111,8 +117,8 @@ while True:
         live_query = """
         INSERT INTO live_flights (
         icao24, callsign, latitude, longitude, 
-            baro_altitude, velocity, true_track, on_ground, last_update
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            baro_altitude, velocity, true_track, on_ground, last_update, vertical_rate
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (icao24) DO UPDATE SET
             latitude = EXCLUDED.latitude,
             longitude = EXCLUDED.longitude,
@@ -120,7 +126,8 @@ while True:
             velocity = EXCLUDED.velocity,
             true_track = EXCLUDED.true_track,
             on_ground = EXCLUDED.on_ground,
-            last_update = EXCLUDED.last_update;
+            last_update = EXCLUDED.last_update,
+            vertical_rate = EXCLUDED.vertical_rate;
         """
 
         #inserting data into postgres
@@ -128,7 +135,7 @@ while True:
             for s in states:
                 data = (s[0], s[1].strip() if s[1] else None,
                     s[6], s[5], s[7], s[9], s[10], s[8], 
-                    datetime.fromtimestamp(s[3]) 
+                    datetime.fromtimestamp(s[3]), s[11]
                 )
                 cursor.execute(live_query, data)
             conn.commit()
@@ -138,7 +145,7 @@ while True:
 
         #-------cleaning up live_flights table------
         cleanup_query = """DELETE FROM live_flights
-        WHERE last_update < (NOW()- interval '7 hours') - INTERVAL '15 minutes';"""
+        WHERE last_update < (NOW()- interval '6 hours') - INTERVAL '15 minutes';"""
         cursor.execute(cleanup_query)
         conn.commit()
 
@@ -146,5 +153,5 @@ while True:
         print("Error during data collection or database operation:", e)
     
     #wait for 5 minutes before next collection
-    time.sleep(60)
+    time.sleep(1800)
 
